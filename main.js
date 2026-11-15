@@ -46,9 +46,10 @@
   const coarse = matchMedia('(pointer: coarse)').matches;
   let rot = 0;             // 0 = normal, 90 / -90 = drawn turned (device-rotation angle it matches)
   let rotPick = 90;        // which way to turn; set from gravity at Start
+  let manual = null;       // set by the turn button: 0, 90 or -90. null = automatic
   function layout() {
     const w = innerWidth, h = innerHeight;
-    rot = (coarse && h > w) ? rotPick : 0;
+    rot = manual !== null ? manual : (coarse && h > w) ? rotPick : 0;
     document.documentElement.classList.toggle('rot', rot !== 0);
     if (!rot) { stage.style.width = '100%'; stage.style.height = '100%'; stage.style.transform = 'none'; return; }
     stage.style.width = h + 'px'; stage.style.height = w + 'px';
@@ -78,7 +79,7 @@
   function onMotion(e) {
     const g = e.accelerationIncludingGravity;
     if (!g || g.x == null || g.y == null || g.z == null) return;
-    if (rot && !tilt.zero) {
+    if (rot && manual === null && !tilt.zero) {
       // Work out which long edge is down so the picture is drawn the right way up.
       const sgn = Math.abs(g.z) > 2 ? (g.z > 0 ? -1 : 1) : 1;
       const pick = g.x * sgn < 0 ? 90 : -90;
@@ -164,6 +165,14 @@
   }
   $('mute').onclick = toggleMute;
   $('recenter').onclick = recenter;
+  // Turn button: each tap turns the picture a quarter turn, then re-centers tilt for the new grip.
+  $('turn').onclick = () => {
+    const order = [0, 90, -90];
+    manual = order[(order.indexOf(rot) + 1) % 3];
+    layout();
+    tilt.zero = null;
+    toast(manual === 0 ? 'View: upright' : 'View: turned sideways. Hold it how you want, then tap re-center.');
+  };
 
   const root = document.documentElement;
   const reqFS = root.requestFullscreen || root.webkitRequestFullscreen;
@@ -202,7 +211,7 @@
     SlideAudio.init();
     keepAwake();
     tilt.zero = null;
-    intro.hidden = true; hud.hidden = false; S.running = true;
+    intro.hidden = true; S.running = true;
     if (window.SLIDE_NO_TILT) toast('Drag on the screen to steer: up to dive and speed up, down to climb and slow down.', 7000);
     else if (denied) toast('Tilt was not allowed. Drag on the screen to steer. To turn tilt on, reload the page, tap Start, then Allow.', 9000);
     else setTimeout(() => { if (S.running && !tilt.live) toast('No tilt sensor found. Drag on the screen or use the arrow keys.', 6000); }, 1500);
