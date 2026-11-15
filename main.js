@@ -39,6 +39,25 @@
     if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; gl.viewport(0, 0, w, h); }
   }
 
+  // ---------- sideways mode ----------
+  // iOS will not let a page force landscape. When a touch device is upright (for example with
+  // rotation lock on), draw everything turned 90 degrees so it is ridden sideways anyway.
+  const stage = $('stage');
+  const coarse = matchMedia('(pointer: coarse)').matches;
+  let rot = 0;             // 0 = normal, 90 / -90 = drawn turned (device-rotation angle it matches)
+  let rotPick = 90;        // which way to turn; set from gravity at Start
+  function layout() {
+    const w = innerWidth, h = innerHeight;
+    rot = (coarse && h > w) ? rotPick : 0;
+    document.documentElement.classList.toggle('rot', rot !== 0);
+    if (!rot) { stage.style.width = '100%'; stage.style.height = '100%'; stage.style.transform = 'none'; return; }
+    stage.style.width = h + 'px'; stage.style.height = w + 'px';
+    stage.style.transform = rot === 90 ? 'translateX(' + w + 'px) rotate(90deg)' : 'translateY(' + h + 'px) rotate(-90deg)';
+  }
+  addEventListener('resize', layout);
+  if (screen.orientation && screen.orientation.addEventListener) screen.orientation.addEventListener('change', layout);
+  layout();
+
   // ---------- state ----------
   const S = { running: false, speed: V_START, dist: 290, steer: 0, pitch: 0, yaw: 0, time: 0, tilt: false, input: 'none' };
   window.__slide = S;
@@ -59,7 +78,13 @@
   function onMotion(e) {
     const g = e.accelerationIncludingGravity;
     if (!g || g.x == null || g.y == null || g.z == null) return;
-    const th = screenAngle() * Math.PI / 180;
+    if (rot && !tilt.zero) {
+      // Work out which long edge is down so the picture is drawn the right way up.
+      const sgn = Math.abs(g.z) > 2 ? (g.z > 0 ? -1 : 1) : 1;
+      const pick = g.x * sgn < 0 ? 90 : -90;
+      if (pick !== rotPick && Math.abs(g.x) > 3) { rotPick = pick; layout(); }
+    }
+    const th = (rot || screenAngle()) * Math.PI / 180;
     let sx = g.x * Math.cos(th) - g.y * Math.sin(th);
     let sy = g.x * Math.sin(th) + g.y * Math.cos(th);
     let sz = g.z;
@@ -105,8 +130,10 @@
   });
   canvas.addEventListener('pointermove', (e) => {
     if (!ptr.down || e.pointerId !== ptr.id) return;
-    ptr.x = clamp((e.clientX - ptr.x0) / (innerWidth * 0.22), -1, 1);
-    ptr.y = clamp(-(e.clientY - ptr.y0) / (innerHeight * 0.28), -1, 1);
+    let dx = e.clientX - ptr.x0, dy = e.clientY - ptr.y0;
+    if (rot === 90) { const t = dx; dx = dy; dy = -t; } else if (rot === -90) { const t = dx; dx = -dy; dy = t; }
+    ptr.x = clamp(dx / (stage.clientWidth * 0.22), -1, 1);
+    ptr.y = clamp(-dy / (stage.clientHeight * 0.28), -1, 1);
   });
   const up = (e) => { if (e.pointerId === ptr.id) { ptr.down = false; ptr.x = ptr.y = 0; } };
   canvas.addEventListener('pointerup', up); canvas.addEventListener('pointercancel', up);
