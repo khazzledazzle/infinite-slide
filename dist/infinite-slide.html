@@ -417,8 +417,8 @@ window.SlideAudio = (function () {
   function setSpeed(n) {
     if (!ctx) return;
     const t = ctx.currentTime;
-    whooshFilter.frequency.setTargetAtTime(200 + n * 900, t, 0.12);
-    whooshGain.gain.setTargetAtTime(0.008 + n * n * 0.07, t, 0.12);
+    whooshFilter.frequency.setTargetAtTime(150 + n * 600, t, 0.12);
+    whooshGain.gain.setTargetAtTime(0.006 + n * n * 0.045, t, 0.12);
     hissGain.gain.setTargetAtTime(n * n * n * 0.006, t, 0.12);
     padFilter.frequency.setTargetAtTime(750 + n * 900, t, 0.5);
   }

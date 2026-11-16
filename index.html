@@ -37,10 +37,31 @@
   #hud { position: fixed; z-index: 11; display: flex; gap: 10px;
     top: max(10px, env(safe-area-inset-top)); right: max(12px, env(safe-area-inset-right)); }
   #hud[hidden] { display: none; }
-  #hud button { width: 44px; height: 44px; border-radius: 50%; font-size: 19px; line-height: 1;
+  #hud button { width: 44px; height: 44px; border-radius: 50%; padding: 0; margin: 0;
+    display: flex; align-items: center; justify-content: center;
     background: rgba(20,8,40,.45); border: 1px solid rgba(255,255,255,.22);
     -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); opacity: .75; }
   #hud button[hidden] { display: none; }
+  #hud svg { width: 22px; height: 22px; display: block; fill: none; stroke: #fff; stroke-width: 2;
+    stroke-linecap: round; stroke-linejoin: round; pointer-events: none; }
+  #hud svg .solid { fill: #fff; stroke: none; }
+  #paused { background: rgba(7,3,15,.55); z-index: 9; }
+  #paused h1 { font-size: clamp(24px, 6vh, 44px); }
+  /* Home-screen guide (a2hs/), restyled to match the start screen. */
+  .adhs-container, .adhs-container * { font-family: -apple-system, system-ui, "Helvetica Neue", sans-serif !important; }
+  .adhs-container.visible { background-color: rgba(7,3,15,.86) !important; }
+  .adhs-container .adhs-modal { color: #eadfff !important; border-radius: 22px !important;
+    background: radial-gradient(ellipse at top, #3a1466, #12062a 75%) !important;
+    border: 1px solid rgba(255,95,183,.45); box-shadow: 0 0 34px rgba(193,75,255,.45) !important; }
+  .adhs-container .adhs-modal .adhs-install-app { font-size: 21px !important; line-height: 1.25; text-align: center !important;
+    word-spacing: normal !important; letter-spacing: 0; padding: 4px 0 18px !important; margin: 0;
+    background: linear-gradient(90deg, #ff5fb7, #c14bff, #6f8fff, #ff3fd0);
+    -webkit-background-clip: text; background-clip: text; color: transparent !important; }
+  .adhs-container .adhs-modal .adhs-app-name { display: none !important; }
+  .adhs-container .adhs-modal .adhs-list .adhs-list-item .adhs-circle { background: linear-gradient(135deg, #ff3fa4, #9a4bff) !important; }
+  .adhs-container .adhs-modal .adhs-list .adhs-list-item .adhs-list-button { background: #fff; color: #14082a; box-shadow: 0 0 10px rgba(255,63,190,.5) !important; }
+  .adhs-container .adhs-modal .adhs-blurb { color: #b9a9e0 !important; }
+  .adhs-container .adhs-logo img { border-radius: 18px !important; box-shadow: 0 0 22px rgba(255,63,190,.6); }
   #toast { position: fixed; z-index: 6; left: 50%; transform: translateX(-50%);
     bottom: max(14px, env(safe-area-inset-bottom)); max-width: 80vw; padding: 8px 16px; border-radius: 14px;
     background: rgba(20,8,40,.7); font-size: 14px; color: #eadfff; text-align: center;
@@ -58,12 +79,18 @@
 <canvas id="c"></canvas>
 
 <div id="hud">
-  <button id="turn" aria-label="Turn the view" title="Turn the view">&#10227;</button>
-  <button id="recenter" aria-label="Re-center tilt" title="Re-center tilt">&#8982;</button>
-  <button id="mute" aria-label="Mute sound" title="Mute sound">&#128266;</button>
-  <button id="fs" aria-label="Full screen" title="Full screen" hidden>&#9974;</button>
+  <button id="pause" aria-label="Pause" title="Pause" hidden><svg viewBox="0 0 24 24"><path id="pauseIcon" class="solid" d="M7 5h3.5v14H7zM13.5 5H17v14h-3.5z"/></svg></button>
+  <button id="turn" aria-label="Turn the view" title="Turn the view"><svg viewBox="0 0 24 24"><path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3"/><path d="M19.5 3.5v4h-4"/></svg></button>
+  <button id="recenter" aria-label="Re-center tilt" title="Re-center tilt"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="5.5"/><path d="M12 2.5v4M12 17.5v4M2.5 12h4M17.5 12h4"/></svg></button>
+  <button id="mute" aria-label="Mute sound" title="Mute sound"><svg viewBox="0 0 24 24"><path class="solid" d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path id="muteIcon" d="M15.5 9a4.5 4.5 0 0 1 0 6M18 6.5a8 8 0 0 1 0 11"/></svg></button>
+  <button id="fs" aria-label="Full screen" title="Full screen" hidden><svg viewBox="0 0 24 24"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/></svg></button>
 </div>
 <div id="toast"></div>
+
+<div id="paused" class="overlay" hidden>
+  <h1>PAUSED</h1>
+  <p>Tap the play button to keep riding.</p>
+</div>
 
 <div id="intro" class="overlay">
   <h1>INFINITE SLIDE</h1>
@@ -96,8 +123,12 @@
       showArrow: true
     });
     // iPad has its own full-screen button, so the guide is for phones only.
-    var isIpad = /iPad/.test(navigator.userAgent) || (/Mac/.test(navigator.platform) && navigator.maxTouchPoints > 1);
-    if (!isIpad) window.AddToHomeScreenInstance.show();
+    var isIpad = /iPad/.test(navigator.userAgent) || (/Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1);
+    if (!isIpad) {
+      window.AddToHomeScreenInstance.show();
+      var t = document.querySelector('.adhs-container .adhs-install-app');
+      if (t) t.textContent = 'For the best experience, add to your home screen.';
+    }
   } catch (e) { console.warn('home-screen guide skipped', e); }
 </script>
 </body>

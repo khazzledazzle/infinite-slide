@@ -161,9 +161,21 @@
   }
   function toggleMute() {
     SlideAudio.setMuted(!SlideAudio.muted);
-    $('mute').innerHTML = SlideAudio.muted ? '&#128263;' : '&#128266;';
+    $('muteIcon').setAttribute('d', SlideAudio.muted ? 'M15.5 9.5l5 5M20.5 9.5l-5 5' : 'M15.5 9a4.5 4.5 0 0 1 0 6M18 6.5a8 8 0 0 1 0 11');
   }
   $('mute').onclick = toggleMute;
+  // Pause: freezes the ride and the sound; the same button resumes.
+  function setPaused(p) {
+    if (!S.started) return;
+    S.running = !p;
+    $('paused').hidden = !p;
+    $('pauseIcon').setAttribute('d', p ? 'M8 5l11 7-11 7z' : 'M7 5h3.5v14H7zM13.5 5H17v14h-3.5z');
+    $('pause').setAttribute('aria-label', p ? 'Resume' : 'Pause');
+    SlideAudio.pause(p);
+    if (!p) keepAwake();
+    lastT = 0;
+  }
+  $('pause').onclick = () => setPaused(S.running);
   $('recenter').onclick = recenter;
   // Turn button: each tap turns the picture a quarter turn, then re-centers tilt for the new grip.
   $('turn').onclick = () => {
@@ -211,7 +223,7 @@
     SlideAudio.init();
     keepAwake();
     tilt.zero = null;
-    intro.hidden = true; S.running = true;
+    intro.hidden = true; S.running = true; S.started = true; $('pause').hidden = false;
     if (window.SLIDE_NO_TILT) toast('Drag on the screen to steer: up to dive and speed up, down to climb and slow down.', 7000);
     else if (denied) toast('Tilt was not allowed. Drag on the screen to steer. To turn tilt on, reload the page, tap Start, then Allow.', 9000);
     else setTimeout(() => { if (S.running && !tilt.live) toast('No tilt sensor found. Drag on the screen or use the arrow keys.', 6000); }, 1500);
@@ -236,9 +248,9 @@
     S.steer += (inp[0] - S.steer) * ease;
     S.pitch += (inp[1] - S.pitch) * ease;
     if (S.running) S.speed = clamp(S.speed + inp[1] * ACCEL * dt, V_MIN, V_MAX);
-    const v = S.running ? S.speed : 6;       // slow drift behind the start screen
+    const v = S.running ? S.speed : S.started ? 0 : 6;   // slow drift behind the start screen, still when paused
     S.dist += v * dt;
-    S.time += dt;
+    if (S.running || !S.started) S.time += dt;
     const kx = S.steer * K_MAX, ky = -S.pitch * K_MAX;
     S.yaw += 2 * kx * v * dt;
 
