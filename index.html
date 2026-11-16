@@ -127,7 +127,12 @@
     if (!isIpad) {
       window.AddToHomeScreenInstance.show();
       var t = document.querySelector('.adhs-container .adhs-install-app');
-      if (t) t.textContent = 'For the best experience, add to your home screen.';
+      if (t) t.textContent = 'For the best experience, add Infinite Slide to your home screen.';
+      // Single-file copy: the guide's pictures are embedded instead of loaded from a2hs/img/.
+      if (window.A2HS_IMG) document.querySelectorAll('.adhs-container img').forEach(function (im) {
+        var d = window.A2HS_IMG[(im.getAttribute('src') || '').split('/').pop()];
+        if (d) im.src = d;
+      });
     }
   } catch (e) { console.warn('home-screen guide skipped', e); }
 </script>
