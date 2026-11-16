@@ -95,7 +95,9 @@
       allowClose: true,
       showArrow: true
     });
-    window.AddToHomeScreenInstance.show();
+    // iPad has its own full-screen button, so the guide is for phones only.
+    var isIpad = /iPad/.test(navigator.userAgent) || (/Mac/.test(navigator.platform) && navigator.maxTouchPoints > 1);
+    if (!isIpad) window.AddToHomeScreenInstance.show();
   } catch (e) { console.warn('home-screen guide skipped', e); }
 </script>
 </body>
