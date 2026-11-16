@@ -8,6 +8,7 @@ An endless first-person ride down a glowing slide. Static web page: no build ste
 - `main.js` — tilt / touch / keyboard input, speed, full screen, wake lock
 - `audio.js` — whoosh and generated music
 - `manifest.webmanifest`, `icon-*.png` — home-screen app setup
+- `a2hs/` — home-screen walkthrough pop-up (philfung/add-to-homescreen 4.6.0, MIT); shows on phones in a browser, up to 3 times, never in the home-screen app
 - `reference/` — photos of the real slide
 
 ## Run on the Mac

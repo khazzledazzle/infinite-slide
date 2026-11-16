@@ -12,6 +12,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" href="icon-180.png">
+<link rel="stylesheet" href="a2hs/add-to-homescreen.min.css">
 <style>
   html, body { margin: 0; height: 100%; background: #07030f; overflow: hidden;
     overscroll-behavior: none; -webkit-user-select: none; user-select: none;
@@ -81,5 +82,21 @@
 <script src="shader.js"></script>
 <script src="audio.js"></script>
 <script src="main.js"></script>
+<!-- Home-screen walkthrough: philfung/add-to-homescreen 4.6.0 (MIT). Does nothing when already opened from the home screen. -->
+<script src="a2hs/add-to-homescreen.min.js"></script>
+<script>
+  try {
+    window.AddToHomeScreenInstance = window.AddToHomeScreen({
+      appName: 'Infinite Slide',
+      appIconUrl: 'icon-180.png',
+      assetUrl: 'a2hs/img/',
+      maxModalDisplayCount: 3,
+      displayOptions: { showMobile: true, showDesktop: false },
+      allowClose: true,
+      showArrow: true
+    });
+    window.AddToHomeScreenInstance.show();
+  } catch (e) { console.warn('home-screen guide skipped', e); }
+</script>
 </body>
 </html>
